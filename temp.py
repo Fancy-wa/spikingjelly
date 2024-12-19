@@ -25,7 +25,9 @@ class LSTM_Test(nn.Module):
     def __init__(self):
         super(LSTM_Test, self).__init__()
         # 定义LSTM层
-        self.lstm = nn.LSTM(input_size=3, hidden_size=3, num_layers=1, bias=False, batch_first=True)
+        # self.lstm = nn.LSTM(input_size=3, hidden_size=3, num_layers=1, bias=False, batch_first=True)
+        # self.lstm = ann.BasicLSTM(input_size=3, hidden_size=3, num_layers=1, bias=False, batch_first=True)
+        self.lstm = snn.BasicLSTM(input_size=3, hidden_size=3, num_layers=1, bias=False, batch_first=True)
         self.lif = neuron.LIFNode(v_threshold=0.5)
         self.linear = nn.Linear(in_features=3, out_features=4, bias=False)
         self.squeeze_out = None
@@ -123,7 +125,6 @@ def lstm_train(input_data, label):
         # 将LSTM层的权重设置为全1
         for name, param in net.lstm.named_parameters():
             param.data = torch.ones_like(param.data)
-
 
         pred = 0.
         for _ in range(10):

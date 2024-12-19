@@ -252,10 +252,10 @@ def parse_opt():
     # parser.add_argument("--mode", type = str, default = 'visdom', help = "看训练曲线(visdom) or 保存训练模型(save)")
     parser.add_argument("--mode", type = str, default = 'save', help = "看训练曲线(visdom) or 保存训练模型(save)")
     parser.add_argument("--vis_env", type = str, default = 'Pytorch')
-    parser.add_argument("--net_name", type = str, default = 'LeNet')
+    # parser.add_argument("--net_name", type = str, default = 'LeNet')
     # parser.add_argument("--net_name", type = str, default = 'ResNet1')
     # parser.add_argument("--net_name", type = str, default = 'ResNet2')
-    # parser.add_argument("--net_name", type = str, default = 'SimpleLSTM')
+    parser.add_argument("--net_name", type = str, default = 'SimpleLSTM')
     # parser.add_argument("--net_name", type = str, default = 'HybridLSTM')
     parser.add_argument("--lr", type = float, default = 0.1)  # Pytorch框架中ann的学习率为0.001和0.0001都可，snn的学习率为0.01和0.001都可
     parser.add_argument("--epochs", type = int, default = 1)

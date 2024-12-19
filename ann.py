@@ -1,3 +1,4 @@
+import torch
 import torch.nn as nn
 
 
@@ -116,9 +117,9 @@ class ResNet1(nn.Module):
         x = self.relu(x)                            # [N, 64, 28, 28] -> [N, 64, 28, 28]
         x = self.maxpool(x)                         # [N, 64, 28, 28] -> [N, 64, 14, 14]
         x = self.layer1(x)                          # [N, 64, 14, 14] -> [N, 64, 14, 14]
-        x = self.avgpool(x)                         # [N, 128, 14, 14] -> [N, 128, 1, 1]
-        x = self.flatten(x)                         # [N, 128, 1, 1] -> [N, 128*1*1]
-        self.output = self.fc(x)                    # [N, 128] -> [N, 10]
+        x = self.avgpool(x)                         # [N, 64, 14, 14] -> [N, 64, 1, 1]
+        x = self.flatten(x)                         # [N, 64, 1, 1] -> [N, 64*1*1]
+        self.output = self.fc(x)                    # [N, 64] -> [N, 10]
         if (self.is_train):
             self.output.retain_grad()
         return self.output
@@ -181,12 +182,64 @@ class ResNet2(nn.Module):
 
 
 
+class BasicLSTM(nn.Module):
+    def __init__(self, input_size, hidden_size, num_layers=1, bias=True, batch_first=False):
+        """
+        ANN LSTM 模块
+        :param input_size: 输入维度
+        :param hidden_size: 隐藏层维度
+        :param num_layers: 层数
+        :param need_bias: 是否需要偏置
+        :param batch_first: 输入数据格式是否 batch 在最前
+        """
+        super(BasicLSTM, self).__init__()
+        self.hidden_size = hidden_size
+        self.batch_first = batch_first
+
+        # 门控机制的线性变换
+        self.input_to_gate = nn.Linear(in_features=input_size, out_features=4*hidden_size, bias=bias)
+        self.hidden_to_gate = nn.Linear(in_features=hidden_size, out_features=4*hidden_size, bias=bias)
+
+    def forward(self, inputs):
+        """
+        :param inputs: [T, N, input_size] 输入序列
+        :return: 输出和隐藏状态
+        """
+        if self.batch_first:
+            inputs = inputs.transpose(0, 1)
+
+        T, N, _ = inputs.size()
+
+        # 初始化隐藏状态和细胞状态
+        h_t = torch.zeros(N, self.hidden_size, device=inputs.device)
+        c_t = torch.zeros(N, self.hidden_size, device=inputs.device)
+
+        outputs = []
+        for t in range(T):
+            x_t = inputs[t]  # 提取当前时间步的输入
+
+            gates = self.input_to_gate(x_t) + self.hidden_to_gate(h_t)
+            i_gate, f_gate, o_gate, c_state = torch.split(gates, self.hidden_size, dim=1)
+            c_t = torch.sigmoid(f_gate) * c_t + torch.sigmoid(i_gate) * torch.tanh(c_state)
+            h_t = torch.sigmoid(o_gate) * torch.tanh(c_t)
+
+            outputs.append(h_t)
+
+        outputs = torch.stack(outputs, dim=0)  # [T, N, hidden_size]
+
+        if self.batch_first:
+            outputs = outputs.transpose(0, 1)
+
+        return outputs, (h_t, c_t)
+
+
 class SimpleLSTM(nn.Module):
     def __init__(self, is_train=False):
         super(SimpleLSTM, self).__init__()
         self.is_train = is_train
 
         self.lstm = nn.LSTM(input_size=28, hidden_size=128, num_layers=1, bias=True, batch_first=True)
+        # self.lstm = BasicLSTM(input_size=28, hidden_size=128, num_layers=1, bias=True, batch_first=True)
         self.fc = nn.Linear(in_features=128, out_features=10)
 
     def forward(self, input_tensor):
